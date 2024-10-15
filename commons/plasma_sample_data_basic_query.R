@@ -5,7 +5,6 @@ library(bigrquery)
 library(data.table)
 library(lubridate)
 library(ggplot2)
-library(openxlsx)
 library(bigrquery)
 
 
@@ -63,6 +62,7 @@ setnames(BS, "BIOBANK", "BIOBANK_PLASMA")
 RR <- rbind(F06, F07, F10_1, F10_2, BS, fill = T)
 RR[, COHORT_FINNGENID := NULL] # COHORT_FINNGENID not set for all data so remove and add later from annotation
 RR <- RR[!is.na(FINNGENID)]
+RR <- unique(RR)
 RR[, FINNGENID_N_PLASMA_SAMPLES := .N, by = .(FINNGENID)]
 RR[, SERIAL_SAMPLES := FINNGENID_N_PLASMA_SAMPLES > 1]
 RR[, HOURS_FROM_COLLECTION_TO_FREEZING := round(time_length(difftime(APPROX_TIMESTAMP_FREEZING, APPROX_TIMESTAMP_COLLECTION), "hours"), 2)]
@@ -71,7 +71,6 @@ RR <- merge(RR, anno, by = "FINNGENID", all = T)
 RR[is.na(AVAILABILITY), ":="(AVAILABILITY = "NO", FINNGENID_N_PLASMA_SAMPLES = 0)]
 RR[, BIOBANK := gsub("^THL BIOBANK.*", "THL BIOBANK", COHORT)]
 RR[, BIOBANK := gsub("^ARCTIC BIOBANK.*", "ARCTIC BIOBANK", BIOBANK)]
-RR <- unique(RR)
 
 
 # Get phenotype data
