@@ -99,7 +99,7 @@ DM_RETINOPATHY
 L12_ATOPIC"), split = "\n")[[1]]
 
 sql <- paste0(
-  "SELECT * ",
+  "SELECT FINNGENID, ENDPOINT, AGE, APPROX_EVENT_DAY ",
   "FROM finngen-production-library.",
   "sandbox_tools_r12.",
   "endpoint_cohorts_r12_v1 ",
@@ -109,20 +109,12 @@ sql <- paste0(
 )
 
 DFX <- as.data.table(bq_table_download(bq_project_query(projectid, sql)))
-DFX <- DFX[order(APPROX_EVENT_DAY), .(FINNGENID, ENDPOINT, AGE, APPROX_EVENT_DAY)][! duplicated(DFX[, .(FINNGENID, ENDPOINT)])]
 DFX[, APPROX_EVENT_DAY := as_datetime(APPROX_EVENT_DAY, tz = "Europe/Helsinki")]
 setnames(DFX, old = "AGE", new = "EVENT_AGE")
 
 # Add Kidney disease TF sample info
 egfrdecline <- fread("/finngen/red/rwalters/ckd/EGFRDECLINE25.gate.pheno.txt")
 egfrdecline[, ENDPOINT := "CKD_EGFRDECLINE25"]
-# egfrdecline <- merge(x = egfrdecline,
-#                      y = anno[, .(FINNGENID, APPROX_BIRTH_DATE)],
-#                      by.x = "FID",
-#                      by.y = "FINNGENID",
-#                      all.x = T)
-# setnames(x = egfrdecline, old = "baseline", new = "EVENT_AGE")
-# egfrdecline[, APPROX_EVENT_DAY := calc_approx_date(APPROX_BIRTH_DATE, EVENT_AGE)]
 setnames(x = egfrdecline, old = "FID", new = "FINNGENID")
 egfrdecline[, EVENT_AGE := as.numeric(NA)]
 egfrdecline[, APPROX_EVENT_DAY := as.POSIXct(NA)]
