@@ -9,6 +9,8 @@ library(bigrquery)
 
 
 # General settings
+
+# projectid is your sandbox name (check the URL in your web browser)
 projectid <- "fg-production-sandbox-6"
 options(gargle_oauth_cache = FALSE)
 bq_auth(scopes = "https://www.googleapis.com/auth/bigquery")
@@ -31,21 +33,17 @@ sql <- paste0(
   "SELECT * ",
   "FROM finngen-production-library.",
   "sandbox_tools_r12.",
-  "minimum_extended_r12_v1 "
-)
-tb <- bq_project_query(projectid, sql)
-min_extended <- as.data.table(bq_table_download(tb))
-
-sql <- paste0(
+  "minimum_extended_r12_v1 ",
+  "AS A ",
+  "LEFT JOIN (",
   "SELECT IID, batch ",
   "FROM finngen-production-library.",
   "sandbox_tools_r12.",
-  "covariates_r12_v1 "
+  "covariates_r12_v1)",
+  "AS B ",
+  "ON A.FINNGENID = B.IID"
 )
-tb <- bq_project_query(projectid, sql)
-covariates <- as.data.table(bq_table_download(tb))
-
-anno <- merge(min_extended, covariates, all = T, by.x = "FINNGENID", by.y = "IID")
+anno <- as.data.table(bq_table_download(bq_project_query(projectid, sql)))
 anno[, IN_DF12_ANALYSIS := ! is.na(batch)]
 
 
